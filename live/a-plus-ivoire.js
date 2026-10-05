@@ -1,0 +1,1 @@
+window.STREAMLIVE_LIVE_SOURCE = { channelId: "a-plus-ivoire", type: "official-page", url: "https://aplusivoire.web-prod2.direct.canal-overseas.com/live", source: "A+ Ivoire" };

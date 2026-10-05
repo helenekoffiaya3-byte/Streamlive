@@ -1,0 +1,1 @@
+window.STREAMLIVE_LIVE_SOURCE = { channelId: "life-tv", type: "official-page", url: "https://lifeplay.ci/live/", source: "Life Play" };

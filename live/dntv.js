@@ -1,0 +1,1 @@
+window.STREAMLIVE_LIVE_SOURCE = { channelId: "dntv", type: "official-page", url: "https://www.dntv.ci/direct", source: "DNTV" };

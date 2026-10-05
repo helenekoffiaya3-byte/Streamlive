@@ -1,0 +1,1 @@
+window.STREAMLIVE_LIVE_SOURCE = { channelId: "rti-2", type: "official-page", url: "https://www.rtiplay.ci/rti2/direct", source: "RTI Play" };

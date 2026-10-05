@@ -1,0 +1,1 @@
+window.STREAMLIVE_LIVE_SOURCE = { channelId: "nci", type: "official-page", url: "https://www.nci.ci/direct", source: "NCI" };

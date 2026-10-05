@@ -29,7 +29,9 @@
       streamEnabled: Boolean(channel.streamEnabled),
       streamConfigured: Boolean(channel.streamConfigured ?? channel.productionUrl ?? channel.youtubeChannelId),
       streamSource: String(channel.streamSource || (channel.youtubeChannelId ? 'youtube-live' : 'hls')),
-      youtubeChannelId: channel.youtubeChannelId || null
+      youtubeChannelId: channel.youtubeChannelId || null,\n      nciDirectUrl: channel.nciDirectUrl || (String(channel.id || '') === 'nci' ? 'https://www.nci.ci/direct' : null),\n      aplusIvoireLiveUrl: channel.aplusIvoireLiveUrl || (String(channel.id || '') === 'a-plus-ivoire' ? 'https://aplusivoire.web-prod2.direct.canal-overseas.com/live' : null),
+      rtiplayUrl: channel.rtiplayUrl || (['rti-1', 'rti-2', 'la-3'].includes(String(channel.id || '')) ? 'https://www.rtiplay.ci/' : null),
+      lifeTvLiveUrl: channel.lifeTvLiveUrl || (String(channel.id || '') === 'life-tv' ? 'https://lifeplay.ci/live/' : null)
     };
   }
 
@@ -52,6 +54,56 @@
 
     if (!channel) {
       return { ok: false, code: 'CHANNEL_NOT_FOUND', channel: null };
+    }
+
+    function loadDedicatedLiveFile(channel) {
+      return new Promise(function (resolve, reject) {
+        const existing = root.STREAMLIVE_LIVE_SOURCE;
+        if (existing && existing.channelId === channel.id) {
+          resolve(existing);
+          return;
+        }
+
+        root.STREAMLIVE_LIVE_SOURCE = null;
+        const script = root.document.createElement('script');
+        script.src = '/live/' + encodeURIComponent(channel.id) + '.js';
+        script.async = true;
+        script.onload = function () {
+          const source = root.STREAMLIVE_LIVE_SOURCE;
+          if (!source || source.channelId !== channel.id || !source.url) {
+            reject(new Error('LIVE_SOURCE_NOT_CONFIGURED'));
+            return;
+          }
+          resolve(source);
+        };
+        script.onerror = function () {
+          reject(new Error('LIVE_SOURCE_FILE_NOT_FOUND'));
+        };
+        root.document.head.appendChild(script);
+      });
+    }
+
+    const dedicatedIds = ['a-plus-ivoire', 'nci', 'dntv', 'life-tv', 'rti-1', 'rti-2', 'la-3'];
+    if (dedicatedIds.includes(channel.id)) {
+      if (!player || typeof player.loadNCILive !== 'function') {
+        return { ok: false, code: 'PLAYER_NOT_READY', channel: channel };
+      }
+
+      player.cleanup?.();
+      player.setStatus('Chargement du Live officiel…');
+
+      loadDedicatedLiveFile(channel)
+        .then(function (source) {
+          player.loadNCILive(source.url);
+          root.dispatchEvent(new CustomEvent('streamlive:channel-selected', {
+            detail: { channel: channel, mode: 'live', source: source.source || 'dedicated-live-file' }
+          }));
+        })
+        .catch(function () {
+          player.setStatus('LIVE NON DISPONIBLE — fichier Live non configuré', 'error');
+        });
+
+      return { ok: true, code: 'CHECKING', channel: channel, mode: 'live', source: 'dedicated-live-file' };
     }
 
     if (!channel.streamEnabled || !channel.streamConfigured || (!channel.productionUrl && !channel.youtubeChannelId)) {
